@@ -328,6 +328,7 @@
   <nav class="view-tabs" id="viewTabs">
     <button data-view="world" class="active">World Rankings</button>
     <button data-view="belgium">🇧🇪 Belgium Deep Dive</button>
+    <button data-view="athlete">🔎 Athlete Focus</button>
     <button data-view="startlist">📋 Startlist Watch</button>
     <button data-view="opportunity">🎯 Opportunity Scoring</button>
     <button data-view="raceresults">🏁 Race Splits</button>
@@ -423,6 +424,23 @@
         </table>
       </div>
     </section>
+
+  </div>
+
+  <div id="athleteView" style="display:none">
+
+    <section class="card">
+      <h2>Athlete deep dive</h2>
+      <p class="card-sub">
+        Pick a Belgian athlete to see, for every upcoming competition on the calendar right now, an estimate of how
+        they'd likely score there — and right next to it, the exact score they'd need to beat in the relevant World
+        Ranking scoring period to actually improve their total. Same underlying model as Opportunity Scoring, just
+        organized around one athlete at a time.
+      </p>
+      <select id="afAthleteSelect" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--page-plane);color:var(--text-primary);font-size:13px;min-width:280px;"></select>
+    </section>
+
+    <div id="afContent"></div>
 
   </div>
 
@@ -813,6 +831,7 @@
   }
 
   // ---------- Belgium deep-dive ----------
+  let afAthleteId = null;
   let belGender = 'all';
   let belSearch = '';
   let belSortKey = 'rank';
@@ -957,6 +976,111 @@
     renderBelTiles();
     renderBelTable();
   }
+
+  // ---------- Athlete focus ----------
+  function gainStr(g) {
+    return (g >= 0 ? '+' : '') + fmt(g);
+  }
+
+  function populateAthleteSelect() {
+    const sel = document.getElementById('afAthleteSelect');
+    const men = BELGIUM.filter(a => a.cat === 'Men').sort((a, b) => a.rank - b.rank);
+    const women = BELGIUM.filter(a => a.cat === 'Women').sort((a, b) => a.rank - b.rank);
+    function optGroup(label, list) {
+      return `<optgroup label="${label}">` + list.map(a => `<option value="${a.id}">#${a.rank} ${a.name}</option>`).join('') + `</optgroup>`;
+    }
+    sel.innerHTML = optGroup('Men', men) + optGroup('Women', women);
+    if ((afAthleteId === null || !BELGIUM.some(a => a.id === afAthleteId)) && BELGIUM.length) {
+      afAthleteId = BELGIUM.slice().sort((a, b) => a.rank - b.rank)[0].id;
+    }
+    if (afAthleteId !== null) sel.value = String(afAthleteId);
+  }
+
+  function afVerdict(o) {
+    if (o.slot_status === 'open') return '<span class="realism-badge demonstrated">Open slot — any finish helps</span>';
+    if (o.beats_threshold) return '<span class="realism-badge demonstrated">Would beat current lowest</span>';
+    return '<span class="realism-badge" style="color:var(--text-muted);background:var(--gray-mid);">Below current lowest</span>';
+  }
+
+  function renderAthleteFocus() {
+    populateAthleteSelect();
+    const container = document.getElementById('afContent');
+    const athlete = BELGIUM.find(a => a.id === afAthleteId);
+    if (!athlete) { container.innerHTML = ''; return; }
+
+    const opps = OPPORTUNITY.opportunities.filter(o => o.athlete_id === athlete.id).slice()
+      .sort((a, b) => a.event_date.localeCompare(b.event_date));
+
+    const headerHtml = `
+      <section class="card">
+        <h2>${athlete.name} <span style="font-weight:400;color:var(--text-muted);font-size:13px;">#${athlete.rank} · ${athlete.cat} · ${fmt(athlete.total)} total pts</span></h2>
+        <div class="tiles" style="grid-template-columns:repeat(2,1fr);margin-top:6px;">
+          <div class="tile">
+            <div class="label">Current period (best 6 of ~52wk)</div>
+            <div style="margin-top:4px;">${periodCell(athlete.current_period)}</div>
+          </div>
+          <div class="tile">
+            <div class="label">Previous period (best 6 of next ~52wk)</div>
+            <div style="margin-top:4px;">${periodCell(athlete.previous_period)}</div>
+          </div>
+        </div>
+      </section>`;
+
+    let tableHtml;
+    if (!opps.length) {
+      tableHtml = `<section class="card">
+        <h2>Upcoming competitions</h2>
+        <p class="card-sub">No eligible upcoming races currently evaluated for this athlete — either nothing's on the
+        visible calendar horizon yet (it only reaches ~5 weeks out today and grows every week), or there isn't yet
+        enough race history in a comparable tier to project from. Check back as the calendar window grows.</p>
+      </section>`;
+    } else {
+      const rows = opps.map(o => `<tr class="${o.startlist_confirmed ? 'confirmed-row' : ''}">
+          <td>${fmtDate(o.event_date)}</td>
+          <td>${o.event_title}${o.startlist_confirmed ? '<span class="confirmed-chip">CONFIRMED</span>' : ''}</td>
+          <td><span class="tier-chip">${o.tier}</span></td>
+          <td class="num">${fmt(o.expected_points)}<div style="font-size:10.5px;color:var(--text-muted);">range ${fmt(o.range_low)}–${fmt(o.range_high)}</div></td>
+          <td class="num">${o.slot_status === 'open' ? 'open slot' : fmt(o.threshold)}</td>
+          <td class="num gain-cell ${o.opportunity_gain > 0 ? 'positive' : ''}">${gainStr(o.opportunity_gain)}</td>
+          <td>${confBadge(o.confidence, o.basis)} ${realismBadge(o.entry_realism)}${o.realistic ? '' : ' <span class="realism-badge hypothetical">Qualification-restricted</span>'}</td>
+          <td>${afVerdict(o)}</td>
+        </tr>`).join('');
+      tableHtml = `<section class="card">
+        <h2>Upcoming competitions</h2>
+        <p class="card-sub">In date order. "Threshold to beat" is the exact score needed in the relevant scoring
+        period right now — or "open slot" if that period isn't full yet, meaning any result adds straight to the
+        total. "Gain" is expected points above that threshold (can be negative — a race worth entering for other
+        reasons, like form or qualification, just wouldn't move the ranking total on its own).</p>
+        <div style="overflow-x:auto;">
+          <table class="roster">
+            <thead><tr>
+              <th>Date</th><th>Event</th><th>Tier</th><th class="num">Expected pts</th>
+              <th class="num">Threshold to beat</th><th class="num">Gain</th><th>Confidence</th><th>Verdict</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </section>`;
+    }
+
+    const historyHtml = `<section class="card">
+      <h2>Recent race history</h2>
+      <p class="card-sub">Same underlying data as the Belgium Deep Dive tab, shown here for reference alongside the projections above.</p>
+      ${raceRowsHtml(athlete)}
+    </section>`;
+
+    container.innerHTML = headerHtml + tableHtml + historyHtml;
+    container.querySelectorAll('[data-tip]').forEach(el => {
+      el.addEventListener('mouseenter', e => showTip(e, el.dataset.tip));
+      el.addEventListener('mousemove', e => moveTip(e));
+      el.addEventListener('mouseleave', hideTip);
+    });
+  }
+
+  document.getElementById('afAthleteSelect').addEventListener('change', e => {
+    afAthleteId = Number(e.target.value);
+    renderAthleteFocus();
+  });
 
   // ---------- Startlist watch ----------
   function fmtDate(iso) {
@@ -1199,7 +1323,7 @@
         <td><span class="tier-chip">${o.tier}</span></td>
         <td class="num">${fmt(o.expected_points)}</td>
         <td class="num">${o.slot_status === 'open' ? 'open slot' : fmt(o.threshold)}</td>
-        <td class="num gain-cell ${gainCls}">+${fmt(o.opportunity_gain)}</td>
+        <td class="num gain-cell ${gainCls}">${gainStr(o.opportunity_gain)}</td>
         <td>${confBadge(o.confidence, o.basis)} ${realismBadge(o.entry_realism)}${o.realistic ? '' : ' <span class="realism-badge hypothetical">Qualification-restricted</span>'}</td>
       </tr>`;
     }).join('');
@@ -1581,6 +1705,7 @@
       const view = btn.dataset.view;
       document.getElementById('worldView').style.display = view === 'world' ? '' : 'none';
       document.getElementById('belgiumView').style.display = view === 'belgium' ? '' : 'none';
+      document.getElementById('athleteView').style.display = view === 'athlete' ? '' : 'none';
       document.getElementById('startlistView').style.display = view === 'startlist' ? '' : 'none';
       document.getElementById('opportunityView').style.display = view === 'opportunity' ? '' : 'none';
       document.getElementById('raceresultsView').style.display = view === 'raceresults' ? '' : 'none';
@@ -1590,6 +1715,7 @@
 
   renderAll();
   renderBelgium();
+  renderAthleteFocus();
   renderStartlist();
   renderOpportunity();
   renderRaceResults();
