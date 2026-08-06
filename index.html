@@ -267,6 +267,31 @@
   .athlete-opp-card .aoc-gain { font-weight: 700; color: var(--good); }
   .athlete-opp-card.no-opp { color: var(--text-muted); font-size: 12px; }
 
+  .lb-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .lb-controls select {
+    padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--page-plane); color: var(--text-primary); font-size: 12.5px;
+  }
+  .lb-row {
+    display: flex; align-items: center; gap: 14px; padding: 11px 6px; border-bottom: 1px solid var(--gridline);
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row.lb-top3 { background: color-mix(in srgb, var(--blue) 5%, transparent); border-radius: 8px; }
+  .lb-rank {
+    width: 26px; flex-shrink: 0; text-align: center; font-weight: 800; font-size: 14px; color: var(--text-muted);
+  }
+  .lb-row.lb-top3 .lb-rank { color: var(--blue); }
+  .lb-main { flex: 1; min-width: 0; }
+  .lb-name { font-weight: 700; font-size: 13px; }
+  .lb-cat { font-weight: 500; color: var(--text-muted); font-size: 11px; margin-left: 4px; }
+  .lb-event { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .lb-badges { margin-top: 4px; }
+  .lb-gain-wrap { width: 200px; flex-shrink: 0; text-align: right; }
+  .lb-gain-value { font-weight: 700; color: var(--good); font-size: 13.5px; }
+  .lb-bar-track { height: 6px; border-radius: 3px; background: var(--gray-mid); overflow: hidden; margin-top: 5px; }
+  .lb-bar-fill { height: 100%; background: var(--blue); border-radius: 3px; }
+  .lb-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 4px; }
+
   .rr-event-card {
     margin-bottom: 22px; background: var(--surface-1); border: 1px solid var(--border);
     border-radius: 12px; padding: 18px 20px 20px; box-shadow: var(--card-shadow);
@@ -329,6 +354,7 @@
     <button data-view="world" class="active">World Rankings</button>
     <button data-view="belgium">🇧🇪 Belgium Deep Dive</button>
     <button data-view="athlete">🔎 Athlete Focus</button>
+    <button data-view="leaderboard">🏆 Best Opportunities</button>
     <button data-view="startlist">📋 Startlist Watch</button>
     <button data-view="opportunity">🎯 Opportunity Scoring</button>
     <button data-view="raceresults">🏁 Race Splits</button>
@@ -441,6 +467,41 @@
     </section>
 
     <div id="afContent"></div>
+
+  </div>
+
+  <div id="leaderboardView" style="display:none">
+
+    <section class="card">
+      <h2>Squad leaderboard — best opportunity per athlete</h2>
+      <p class="card-sub">
+        Every tracked Belgian athlete, ranked by the single biggest scoring opportunity currently on their calendar.
+        This is the quick "who should we prioritize sending where" view for the whole squad — for the full,
+        filterable list of every opportunity for every athlete, use Opportunity Scoring instead.
+      </p>
+      <div class="lb-controls">
+        <div class="gender-tabs" id="lbGenderTabs">
+          <button data-gender="all" class="active">All</button>
+          <button data-gender="Men">Men</button>
+          <button data-gender="Women">Women</button>
+        </div>
+        <select id="lbRealismFilter">
+          <option value="realistic" selected>Realistic access only (recommended)</option>
+          <option value="all">Show everything, incl. qualification-restricted long shots</option>
+        </select>
+      </div>
+      <div id="lbSquadList"></div>
+    </section>
+
+    <section class="card">
+      <h2>Top single opportunities, squad-wide</h2>
+      <p class="card-sub">
+        The single biggest point-scoring opportunities across the whole squad right now, regardless of athlete —
+        useful for spotting which upcoming races offer the biggest swings. Capped at 2 per athlete so one athlete's
+        cluster of similar races doesn't crowd out the rest of the squad.
+      </p>
+      <div id="lbOverallList"></div>
+    </section>
 
   </div>
 
@@ -1363,6 +1424,108 @@
     renderExcludedList();
   }
 
+  // ---------- Best Opportunities leaderboard ----------
+  let lbGender = 'all';
+  let lbRealism = 'realistic';
+
+  function lbRow(rank, name, cat, eventTitle, eventDate, tier, confirmed, gain, maxGain, confidence, basis, realism) {
+    const pct = maxGain > 0 ? Math.max(4, Math.round((gain / maxGain) * 100)) : 0;
+    const top3 = rank <= 3 ? ' lb-top3' : '';
+    return `<div class="lb-row${top3}">
+      <div class="lb-rank">${rank}</div>
+      <div class="lb-main">
+        <div class="lb-name">${name}<span class="lb-cat">${cat}</span></div>
+        <div class="lb-event">${eventTitle} · <span class="tier-chip">${tier}</span> · ${fmtDate(eventDate)}${confirmed ? '<span class="confirmed-chip">CONFIRMED</span>' : ''}</div>
+        <div class="lb-badges">${confBadge(confidence, basis)} ${realismBadge(realism)}</div>
+      </div>
+      <div class="lb-gain-wrap">
+        <div class="lb-gain-value">${gainStr(gain)} pts</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }
+
+  function lbBestPerAthlete() {
+    let list = OPPORTUNITY.athlete_summaries.slice();
+    if (lbGender !== 'all') list = list.filter(a => a.cat === lbGender);
+    const withBest = list.map(a => {
+      const best = a.top_opportunities.find(o => lbRealism !== 'realistic' || o.realistic);
+      return best ? { athlete: a, opp: best } : null;
+    }).filter(Boolean);
+    withBest.sort((x, y) => y.opp.opportunity_gain - x.opp.opportunity_gain);
+    return withBest;
+  }
+
+  function renderLbSquadList() {
+    const withBest = lbBestPerAthlete();
+    const el = document.getElementById('lbSquadList');
+    if (!withBest.length) {
+      el.innerHTML = '<div class="lb-empty">No eligible opportunities for this filter right now — try "Show everything" or check back as the calendar window grows.</div>';
+      return;
+    }
+    const maxGain = withBest[0].opp.opportunity_gain;
+    el.innerHTML = withBest.map((x, i) => lbRow(
+      i + 1, x.athlete.name, x.athlete.cat, x.opp.event_title, x.opp.event_date, x.opp.tier,
+      x.opp.startlist_confirmed, x.opp.opportunity_gain, maxGain, x.opp.confidence, x.opp.basis, x.opp.entry_realism
+    )).join('');
+    wireTips(el);
+  }
+
+  function renderLbOverallList() {
+    let list = OPPORTUNITY.opportunities.slice();
+    if (lbGender !== 'all') list = list.filter(o => o.cat === lbGender);
+    if (lbRealism === 'realistic') list = list.filter(o => o.realistic);
+    list.sort((a, b) => b.opportunity_gain - a.opportunity_gain);
+    // Cap at 2 per athlete so one athlete's cluster of similar-value races can't crowd out the rest of the squad.
+    const perAthleteCount = {};
+    const capped = [];
+    for (const o of list) {
+      const n = perAthleteCount[o.athlete_id] || 0;
+      if (n >= 2) continue;
+      perAthleteCount[o.athlete_id] = n + 1;
+      capped.push(o);
+      if (capped.length >= 15) break;
+    }
+    list = capped;
+    const el = document.getElementById('lbOverallList');
+    if (!list.length) {
+      el.innerHTML = '<div class="lb-empty">No eligible opportunities for this filter right now — try "Show everything" or check back as the calendar window grows.</div>';
+      return;
+    }
+    const maxGain = list[0].opportunity_gain;
+    el.innerHTML = list.map((o, i) => lbRow(
+      i + 1, o.athlete_name, o.cat, o.event_title, o.event_date, o.tier,
+      o.startlist_confirmed, o.opportunity_gain, maxGain, o.confidence, o.basis, o.entry_realism
+    )).join('');
+    wireTips(el);
+  }
+
+  function wireTips(container) {
+    container.querySelectorAll('[data-tip]').forEach(elm => {
+      elm.addEventListener('mouseenter', e => showTip(e, elm.dataset.tip));
+      elm.addEventListener('mousemove', e => moveTip(e));
+      elm.addEventListener('mouseleave', hideTip);
+    });
+  }
+
+  function renderLeaderboard() {
+    renderLbSquadList();
+    renderLbOverallList();
+  }
+
+  document.querySelectorAll('#lbGenderTabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#lbGenderTabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      lbGender = btn.dataset.gender;
+      renderLeaderboard();
+    });
+  });
+  document.getElementById('lbRealismFilter').addEventListener('change', e => {
+    lbRealism = e.target.value;
+    renderLeaderboard();
+  });
+
   // ---------- Race results / splits ----------
   const RR_COLUMNS = [
     { key: 'prog_id', label: 'Program ID', num: true },
@@ -1706,6 +1869,7 @@
       document.getElementById('worldView').style.display = view === 'world' ? '' : 'none';
       document.getElementById('belgiumView').style.display = view === 'belgium' ? '' : 'none';
       document.getElementById('athleteView').style.display = view === 'athlete' ? '' : 'none';
+      document.getElementById('leaderboardView').style.display = view === 'leaderboard' ? '' : 'none';
       document.getElementById('startlistView').style.display = view === 'startlist' ? '' : 'none';
       document.getElementById('opportunityView').style.display = view === 'opportunity' ? '' : 'none';
       document.getElementById('raceresultsView').style.display = view === 'raceresults' ? '' : 'none';
@@ -1716,6 +1880,7 @@
   renderAll();
   renderBelgium();
   renderAthleteFocus();
+  renderLeaderboard();
   renderStartlist();
   renderOpportunity();
   renderRaceResults();
