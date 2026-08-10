@@ -328,17 +328,33 @@
   .pi-formula-box .pi-formula-main { font-style: italic; font-size: 13.5px; margin-bottom: 6px; }
   .pi-formula-box .pi-formula-k { font-size: 12px; color: var(--text-secondary); }
   .pi-pill {
-    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+    display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap;
   }
-  table.pitable { width: 100%; border-collapse: collapse; font-size: 11.8px; }
+  table.pitable { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
   table.pitable th {
-    text-align: left; padding: 7px 7px; color: var(--text-secondary); font-weight: 600;
-    border-bottom: 1px solid var(--gridline); cursor: pointer; user-select: none; white-space: nowrap;
+    text-align: left; padding: 4px 4px; color: var(--text-secondary); font-weight: 600;
+    border-bottom: 1px solid var(--gridline); cursor: pointer; user-select: none;
+    white-space: normal; line-height: 1.15; vertical-align: bottom; word-break: break-word;
   }
   table.pitable th.num, table.pitable td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  table.pitable td { padding: 6px 7px; border-bottom: 1px solid var(--gridline); white-space: nowrap; }
+  table.pitable td { padding: 3px 4px; border-bottom: 1px solid var(--gridline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   table.pitable td.pi-wpi { font-weight: 700; }
-  table.pitable td.pi-cat-cell, table.pitable td.pi-crit-cell { border-radius: 4px; text-align: center; font-weight: 600; }
+  table.pitable td.pi-cat-cell, table.pitable td.pi-crit-cell { border-radius: 3px; text-align: center; font-weight: 600; padding: 3px 2px; }
+  table.pitable td.pi-race-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+  table.pitable col.pi-col-year { width: 36px; }
+  table.pitable col.pi-col-date { width: 58px; }
+  table.pitable col.pi-col-sex { width: 54px; }
+  table.pitable col.pi-col-race_type { width: 50px; }
+  table.pitable col.pi-col-race { width: 190px; }
+  table.pitable col.pi-col-pi_top8 { width: 46px; }
+  table.pitable col.pi-col-pi_top16_24 { width: 52px; }
+  table.pitable col.pi-col-pi_top24 { width: 46px; }
+  table.pitable col.pi-col-count { width: 42px; }
+  table.pitable col.pi-col-wpi { width: 52px; }
+  table.pitable col.pi-col-category { width: 88px; }
+  table.pitable col[class^="pi-col-crit"] { width: 39px; }
+  table.pitable td.num { text-overflow: clip; }
+  table.pitable td.pi-cat-cell { white-space: normal; line-height: 1.15; }
 </style>
 </head>
 <body>
@@ -648,6 +664,7 @@
       </div>
       <div style="overflow-x:auto;">
         <table class="pitable">
+          <colgroup id="piColgroup"></colgroup>
           <thead><tr id="piTableHead"></tr></thead>
           <tbody id="piTableBody"></tbody>
         </table>
@@ -1888,7 +1905,6 @@
     { key: 'sex', label: 'Sex', sortable: true },
     { key: 'race_type', label: 'Race type', sortable: true },
     { key: 'race', label: 'Race', sortable: true },
-    { key: 'distance', label: 'Distance', sortable: true },
     { key: 'pi_top8', label: 'PI (QoF) top 8', num: true, sortable: true },
     { key: 'pi_top16_24', label: 'PI (QoF) top 16-24', num: true, sortable: true },
     { key: 'pi_top24', label: 'PI (QoF) TOP 24', num: true, sortable: true },
@@ -1948,7 +1964,10 @@
     });
   }
 
+  function piColClass(key) { return 'pi-col-' + key.replace(':', '-').replace(/\s+/g, ''); }
+
   function piRenderHead() {
+    document.getElementById('piColgroup').innerHTML = PI_COLUMNS.map(c => `<col class="${piColClass(c.key)}">`).join('');
     document.getElementById('piTableHead').innerHTML = PI_COLUMNS.map(c => {
       const arrow = piSortKey === c.key ? (piSortDir === 1 ? '▲' : '▼') : '';
       return `<th class="${c.num ? 'num' : ''}" ${c.sortable ? `data-key="${c.key}"` : 'style="cursor:default;"'}>${c.label}${c.sortable ? `<span class="arrow">${arrow}</span>` : ''}</th>`;
@@ -2005,7 +2024,12 @@
           return `<td class="num">${piFmt(r[c.key])}</td>`;
         }
         if (c.key === 'date') {
-          return `<td>${fmtDate(r.date)}</td>`;
+          const d = new Date(r.date + 'T00:00:00');
+          const label = isNaN(d) ? r.date : d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+          return `<td>${label}</td>`;
+        }
+        if (c.key === 'race') {
+          return `<td class="pi-race-cell" title="${r.race.replace(/"/g,'&quot;')}">${r.race}</td>`;
         }
         return `<td${c.num ? ' class="num"' : ''}>${r[c.key]}</td>`;
       }).join('');
