@@ -964,9 +964,9 @@
   const SNAPSHOTS = JSON.parse(document.getElementById('snapshot-data').textContent);
   const BELGIUM = JSON.parse(document.getElementById('belgium-data').textContent);
   const JUNIORS = JSON.parse(document.getElementById('juniors-data').textContent);
-  // Year of birth per athlete id (fetched from World Triathlon athlete profiles, 2026-08-10).
+  // Year of birth per athlete id (fetched from World Triathlon athlete profiles; last completed 2026-08-25 — covers all 23 roster athletes).
   // U23 in 2026 = born 2003+; Junior = born 2007+. New roster athletes without an entry show no chip.
-  const BEL_YOB = {93364:1997,96111:1999,135249:2003,42996:1995,181477:2005,165163:2006,166687:2006,113106:1994,140307:1993,135764:2003,159797:2005,149442:2004,115330:2001,159799:2003,135763:2003};
+  const BEL_YOB = {93364:1997,96111:1999,135249:2003,42996:1995,181477:2005,165163:2006,166687:2006,113106:1994,140307:1993,135764:2003,159797:2005,149442:2004,115330:2001,159799:2003,135763:2003,96552:1996,159341:2000,159796:2005,161330:2006,165164:2006,175246:2007,189181:2008,189297:2007};
   const SEASON_YEAR = new Date().getFullYear();
   function ageBadge(id) {
     const yob = BEL_YOB[id];
