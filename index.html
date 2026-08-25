@@ -1365,9 +1365,12 @@
   }
 
   function topScoresHtml(athlete) {
-    const scored = (athlete.races || []).filter(r => r.pts > 0);
-    const top4 = scored.slice().sort((a, b) => b.pts - a.pts).slice(0, 4)
-      .sort((a, b) => eventTier(a.event) - eventTier(b.event) || b.pts - a.pts);
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 20);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const scored = (athlete.races || []).filter(r => r.pts > 0 && r.date && r.date >= cutoffStr);
+    const top4 = scored.slice().sort((a, b) => b.pts - a.pts).slice(0, 5)
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)));
     if (!top4.length) return '';
     const sex = athlete.cat === 'Men' ? 'MALE' : 'FEMALE';
     const rows = top4.map(r => {
@@ -1390,7 +1393,7 @@
       </tr>`;
     }).join('');
     const colHeads = CRITCFG.columns.map(c => `<th style="text-align:center;">${c.label}</th>`).join('');
-    return `<div style="margin-top:4px;"><span class="period-badge">Top 4 results — ordered by event tier, with Be3 selection-criteria check</span></div>
+    return `<div style="margin-top:4px;"><span class="period-badge">Top 5 results — last 20 months, newest first, with Be3 selection-criteria check</span></div>
       <table class="races" style="margin-top:6px;">
         <thead><tr><th>Tier</th><th>Date</th><th>Event</th><th class="num">Pos</th><th class="num">Points</th><th class="num">WPI</th>${colHeads}</tr></thead>
         <tbody>${rows}</tbody>
