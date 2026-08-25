@@ -1212,6 +1212,7 @@
     list.sort((a, b) => {
       let av, bv;
       if (belSortKey === 'avg_current') { av = avgCurrent(a) ?? -1; bv = avgCurrent(b) ?? -1; }
+      else if (belSortKey === 'yob') { av = BEL_YOB[a.id] || 0; bv = BEL_YOB[b.id] || 0; }
       else { av = a[belSortKey]; bv = b[belSortKey]; }
       if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
       if (av < bv) return -1 * belSortDir;
@@ -1245,6 +1246,7 @@
   const BEL_COLUMNS = [
     { key: 'name', label: 'Athlete' },
     { key: 'cat', label: 'Sex' },
+    { key: 'yob', label: 'Born', num: true },
     { key: 'rank', label: 'World rank', num: true },
     { key: 'total', label: 'Total pts', num: true },
     { key: 'current_period', label: 'Current period — counting scores (best 6 of ~52wk)' },
@@ -1254,7 +1256,7 @@
 
   function renderBelTableHead() {
     document.getElementById('belTableHead').innerHTML = BEL_COLUMNS.map(c => {
-      const sortable = c.key === 'name' || c.key === 'rank' || c.key === 'total' || c.key === 'avg_current';
+      const sortable = c.key === 'name' || c.key === 'rank' || c.key === 'total' || c.key === 'avg_current' || c.key === 'yob';
       const arrow = belSortKey === c.key ? (belSortDir === 1 ? '▲' : '▼') : '';
       return `<th class="${c.num ? 'num' : ''}" ${sortable ? `data-key="${c.key}"` : ''} style="${sortable ? '' : 'cursor:default;'}">${c.label}${sortable ? `<span class="arrow">${arrow}</span>` : ''}</th>`;
     }).join('');
@@ -1435,6 +1437,7 @@
       return `<tr class="roster-row ${expanded ? 'expanded' : ''}" data-id="${a.id}">
           <td><span class="expand-icon">▶</span> ${a.name}${ageBadge(a.id)}</td>
           <td>${a.cat}</td>
+          <td class="num">${BEL_YOB[a.id] || '—'}</td>
           <td class="num">#${a.rank}</td>
           <td class="num">${fmt(a.total)}</td>
           <td>${scoresCell(a, 'Current', a.current_period)}</td>
@@ -1442,7 +1445,7 @@
           <td class="num">${avgCurrent(a) !== null ? fmt(avgCurrent(a)) : '—'}</td>
         </tr>
         <tr class="detail-row ${expanded ? '' : 'hidden'}" data-detail-for="${a.id}">
-          <td colspan="7">${expanded ? belPeriodPanelsHtml(a) + raceRowsHtml(a) : ''}</td>
+          <td colspan="8">${expanded ? belPeriodPanelsHtml(a) + raceRowsHtml(a) : ''}</td>
         </tr>`;
     }).join('');
 
