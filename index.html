@@ -1563,7 +1563,7 @@
         p.athletes.forEach(a => {
           if (a.athlete_id === athlete.id) {
             rows.push({
-              year, event_title: ev.event_title, event_date: ev.event_date,
+              year, event_title: ev.event_title, event_date: ev.event_date, tier: ev.tier,
               loss_swim: a.loss_swim_best, loss_run: a.loss_run_best, position: a.position,
             });
           }
@@ -1672,10 +1672,8 @@
 
   function afDisciplineTrendHtml(athlete) {
     const races = afDisciplineRaces(athlete);
-    const yearly = afYearlyAverages(races);
-    const withData = yearly.filter(d => d.swimAvg != null || d.runAvg != null);
 
-    if (!withData.length) {
+    if (!races.length) {
       return `<section class="card">
         <h2>Discipline trend</h2>
         <p class="card-sub">Year-over-year swim and run performance versus the field, based on full-results races with
@@ -1684,40 +1682,67 @@
       </section>`;
     }
 
-    const raceRowsFor = (year) => races.filter(r => r.year === year).map(r => `<tr>
-        <td style="padding-left:24px;color:var(--text-secondary);">${r.event_title}</td>
-        <td class="num" style="white-space:nowrap;">${belDate(r.event_date)}</td>
-        <td class="num">${r.loss_swim != null ? r.loss_swim.toFixed(1) + '%' : '—'}</td>
-        <td class="num">${r.loss_run != null ? r.loss_run.toFixed(1) + '%' : '—'}</td>
-        <td class="num">${r.position ?? '—'}</td>
-      </tr>`).join('');
-    const tableRows = withData.map(d => `<tr style="font-weight:700;background:var(--page-plane);">
-        <td>${d.year} — season average</td>
-        <td class="num"></td>
-        <td class="num">${d.swimAvg != null ? d.swimAvg.toFixed(1) + '%' : '—'}</td>
-        <td class="num">${d.runAvg != null ? d.runAvg.toFixed(1) + '%' : '—'}</td>
-        <td class="num">${d.count} race${d.count === 1 ? '' : 's'}</td>
-      </tr>` + raceRowsFor(d.year)).join('');
+    const groupOf = (r) => {
+      const t = r.event_title || '';
+      if (r.tier === 'World Championship Series' || /Championship Series|Championship Finals|Grand Final|Olympic Games/i.test(t)) return 0;
+      if (r.tier === 'World Cup' || /World Triathlon Cup/i.test(t)) return 1;
+      if (/Europe/i.test(t) && /Championships/i.test(t) && !/Cup/i.test(t)) return 1;
+      if (/Europe Triathlon (Premium )?(Junior )?Cup/i.test(t)) return 2;
+      return 3;
+    };
+    const GROUP_NAMES = [
+      'World Triathlon Championship Series / Grand Final',
+      'Europe Triathlon Championships / World Cups',
+      'Europe Triathlon Cup',
+      'Other races (FISU, non-European cups, …)'
+    ];
 
-    return `<section class="card">
-      <h2>Discipline trend</h2>
-      <p class="card-sub">Average % behind the fastest swim / run split in the field, by season — lower is stronger.
-      Trend line is a simple year-over-year linear fit${withData.length < 2 ? ' (needs at least 2 seasons with data — not shown yet)' : ''}.
-      Based on every race for this athlete with published full results (see Race Splits); races without splits data yet aren't counted.</p>
-      <div class="lb-controls" style="margin-bottom:2px;">
-        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);"><i style="width:10px;height:10px;border-radius:2px;background:var(--blue);display:inline-block;"></i> Swim</span>
-        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);"><i style="width:10px;height:10px;border-radius:2px;background:var(--series-2);display:inline-block;"></i> Run</span>
-      </div>
-      <div class="dt-chart-wrap">${afDisciplineTrendSvg(withData)}</div>
-      <details style="margin-top:10px;">
-        <summary style="cursor:pointer;font-size:12.5px;color:var(--text-secondary);">Table view</summary>
+    const blocks = GROUP_NAMES.map((gname, gi) => {
+      const sub = races.filter(r => groupOf(r) === gi);
+      if (!sub.length) return '';
+      const yearly = afYearlyAverages(sub).filter(d => d.swimAvg != null || d.runAvg != null);
+      const raceRowsFor = (year) => sub.filter(r => r.year === year).map(r => `<tr>
+          <td style="padding-left:24px;color:var(--text-secondary);">${r.event_title}</td>
+          <td class="num" style="white-space:nowrap;">${belDate(r.event_date)}</td>
+          <td class="num">${r.loss_swim != null ? r.loss_swim.toFixed(1) + '%' : '—'}</td>
+          <td class="num">${r.loss_run != null ? r.loss_run.toFixed(1) + '%' : '—'}</td>
+          <td class="num">${r.position ?? '—'}</td>
+        </tr>`).join('');
+      const tableRows = yearly.map(d => `<tr style="font-weight:700;background:var(--page-plane);">
+          <td>${d.year} — season average</td>
+          <td class="num"></td>
+          <td class="num">${d.swimAvg != null ? d.swimAvg.toFixed(1) + '%' : '—'}</td>
+          <td class="num">${d.runAvg != null ? d.runAvg.toFixed(1) + '%' : '—'}</td>
+          <td class="num">${d.count} race${d.count === 1 ? '' : 's'}</td>
+        </tr>` + raceRowsFor(d.year)).join('');
+      const chart = yearly.length
+        ? `<div class="dt-chart-wrap">${afDisciplineTrendSvg(yearly)}</div>`
+        : `<p class="card-sub" style="margin:6px 0 0;">Races on record, but no published splits yet in this series.</p>`;
+      const table = yearly.length ? `<details style="margin-top:6px;">
+        <summary style="cursor:pointer;font-size:12.5px;color:var(--text-secondary);">Table view — every race</summary>
         <div style="overflow-x:auto;margin-top:8px;">
           <table class="roster">
             <thead><tr><th>Year / race</th><th class="num">Date</th><th class="num">% loss swim</th><th class="num">% loss run</th><th class="num">Pos</th></tr></thead>
             <tbody>${tableRows}</tbody>
           </table>
         </div>
-      </details>
+      </details>` : '';
+      return `<div style="margin-top:20px;">
+        <h3 style="font-size:14px;margin:0 0 4px;">${gname} <span style="color:var(--text-muted);font-weight:400;font-size:12px;">(${sub.length} race${sub.length === 1 ? '' : 's'} with splits)</span></h3>
+        ${chart}${table}
+      </div>`;
+    }).join('');
+
+    return `<section class="card">
+      <h2>Discipline trend — by series</h2>
+      <p class="card-sub">Average % behind the fastest swim / run split in the field, by season and per series level — lower is stronger.
+      Trend lines are simple year-over-year linear fits. Based on every race for this athlete with published full results (see Race Splits);
+      races without splits data yet aren't counted.</p>
+      <div class="lb-controls" style="margin-bottom:2px;">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);"><i style="width:10px;height:10px;border-radius:2px;background:var(--blue);display:inline-block;"></i> Swim</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);"><i style="width:10px;height:10px;border-radius:2px;background:var(--series-2);display:inline-block;"></i> Run</span>
+      </div>
+      ${blocks}
     </section>`;
   }
 
