@@ -515,6 +515,7 @@
       </div>
       <div class="table-controls">
         <input type="search" id="belSearchBox" placeholder="Search athlete…">
+        <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;"><input type="checkbox" id="belShortDatesBox"> Short dates</label>
         <span class="count" id="belRowCount"></span>
       </div>
       <div style="overflow-x:auto;">
@@ -1291,6 +1292,25 @@
   }
   const TIER_LABELS = {1: 'WTCS / Grand Final / Olympics', 2: 'World Cup / Eur. Champs', 3: 'Europe Cup', 4: 'Belgian Champs', 5: 'Other'};
 
+  let belShortDates = false;
+  function belDate(d) {
+    if (!belShortDates) return d;
+    const p = String(d).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0].slice(2) : d;
+  }
+  function belPeriodPanelsHtml(a) {
+    const st = (pname) => {
+      const s = countedScores(a, pname);
+      if (!s.length) return '<span style="color:var(--text-muted);">no counted results</span>';
+      const avg = s.reduce((x, y) => x + y, 0) / s.length;
+      return `avg <strong>${fmt(avg)}</strong> · high <strong>${fmt(s[0])}</strong> · low <strong>${fmt(s[s.length - 1])}</strong> <span style="color:var(--text-muted);">(${s.length} counted)</span>`;
+    };
+    return `<div class="tiles" style="grid-template-columns:repeat(2,minmax(240px,1fr));margin:10px 0 4px;">
+      <div class="tile"><div class="label">Current period (best 6 of ~52wk)</div><div style="margin-top:4px;">${periodCell(a.current_period)}</div><div class="sub" style="margin-top:6px;">${st('Current')}</div></div>
+      <div class="tile"><div class="label">Previous period (best 6 of next ~52wk)</div><div style="margin-top:4px;">${periodCell(a.previous_period)}</div><div class="sub" style="margin-top:6px;">${st('Previous')}</div></div>
+    </div>`;
+  }
+
   function countedScores(athlete, pname) {
     return athlete.races.filter(r => r.period === pname && r.counted).map(r => r.pts).sort((a, b) => b - a);
   }
@@ -1359,7 +1379,7 @@
       }).join('');
       return `<tr>
         <td style="color:#888;font-size:10px;white-space:nowrap;">${TIER_LABELS[eventTier(r.event)]}</td>
-        <td style="white-space:nowrap;">${r.date}</td>
+        <td style="white-space:nowrap;">${belDate(r.date)}</td>
         <td>${r.event}</td>
         <td class="num">${pos ?? '—'}</td>
         <td class="num"><strong>${fmt(r.pts)}</strong></td>
@@ -1391,7 +1411,7 @@
       const rows = races.map(r => {
         const isLowest = r.counted && r.pts === lowestPts;
         return `<tr class="${r.counted ? '' : 'not-counted'} ${isLowest ? 'lowest-counted' : ''}">
-          <td>${r.date}</td>
+          <td style="white-space:nowrap;">${belDate(r.date)}</td>
           <td>${r.event}</td>
           <td class="num">${r.pos ?? '—'}</td>
           <td class="num">${fmt(r.pts)}</td>
@@ -1422,7 +1442,7 @@
           <td class="num">${avgCurrent(a) !== null ? fmt(avgCurrent(a)) : '—'}</td>
         </tr>
         <tr class="detail-row ${expanded ? '' : 'hidden'}" data-detail-for="${a.id}">
-          <td colspan="7">${expanded ? raceRowsHtml(a) : ''}</td>
+          <td colspan="7">${expanded ? belPeriodPanelsHtml(a) + raceRowsHtml(a) : ''}</td>
         </tr>`;
     }).join('');
 
@@ -1444,6 +1464,7 @@
     });
   });
   document.getElementById('belSearchBox').addEventListener('input', e => { belSearch = e.target.value; renderBelTable(); });
+  document.getElementById('belShortDatesBox').addEventListener('change', e => { belShortDates = e.target.checked; renderBelTable(); });
 
   // ---------- Belgian Juniors (Europe Triathlon Junior Ranking) ----------
   let jrGender = 'male';
