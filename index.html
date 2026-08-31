@@ -379,7 +379,7 @@
   .hero-desc { max-width:min(820px, 58vw); color:rgba(255,255,255,.78); font-size:14px; line-height:1.65; margin:0 0 18px; }
   header.hero .subtitle { color:rgba(255,255,255,.72); font-size:13.5px; margin:6px 0 0; letter-spacing:.02em; }
   header.hero .subtitle a { color:var(--brand-blue); }
-  header.hero .theme-toggle { position:absolute; top:18px; right:20px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); color:rgba(255,255,255,.85); z-index:2; }
+  header.hero .theme-toggle { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); color:rgba(255,255,255,.85); }
   .hero-logo { position:absolute; right:36px; top:50%; transform:translateY(-50%); height:110px; max-width:24vw; object-fit:contain; cursor:pointer; }
   @media (max-width:900px){ .hero-logo{ display:none; } }
   .hero-chips { display:flex; gap:8px; flex-wrap:wrap; }
@@ -397,9 +397,7 @@
   .nav-card .nc-go { position:absolute; top:14px; right:14px; color:rgba(255,255,255,.45); font-size:14px; }
   .nav-card:hover .nc-go { color:var(--brand-blue); }
   nav.view-tabs { display:none !important; }
-  .section-bar { display:none; align-items:center; justify-content:space-between; gap:14px; background:linear-gradient(135deg,#0e2433,#1b4763); border-radius:12px; padding:13px 20px; margin:0 0 18px; position:relative; overflow:hidden; }
-  .section-bar::after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg,#000 0 18%,var(--brand-yellow) 18% 36%,var(--brand-red) 36% 54%,var(--brand-blue) 54% 100%); }
-  .section-bar h2 { margin:0; color:#fff; font-size:17.5px; font-weight:800; letter-spacing:.02em; border:none; padding:0; }
+  .hero-controls { position:absolute; top:18px; right:20px; display:flex; gap:8px; z-index:3; }
   .back-home { background:rgba(255,255,255,.10); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:7px 16px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
   .back-home:hover { border-color:var(--brand-blue); color:var(--brand-blue); }
   /* background watermark */
@@ -412,11 +410,14 @@
 <div class="wrap">
 
   <header class="hero" id="mainHeader">
-    <button class="theme-toggle" id="themeToggle">Toggle dark mode</button>
+    <div class="hero-controls">
+      <button class="back-home" id="backHome" style="display:none;">⌂ Back to overview</button>
+      <button class="theme-toggle" id="themeToggle">Toggle dark mode</button>
+    </div>
     <img class="hero-logo" id="heroLogo" alt="Belgian Triathlon — home" title="Back to home">
     <div class="hero-kicker">Belgian Triathlon &middot; BE3 Topsport</div>
-    <h1>Elite Performance Dashboard</h1>
-    <p class="hero-desc">One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, start lists, race analysis, upcoming scoring opportunities and the road to LA28 &mdash; built on official World Triathlon data, updated on request.</p>
+    <h1 id="heroTitle">Elite Performance Dashboard</h1>
+    <p class="hero-desc" id="heroDesc">One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, start lists, race analysis, upcoming scoring opportunities and the road to LA28 &mdash; built on official World Triathlon data, updated on request.</p>
     <p class="subtitle" id="subtitleLine">Loading…</p>
   </header>
 
@@ -433,10 +434,7 @@
     <button data-view="perfindex">📊 Weighted Performance Index</button>
   </nav>
 
-  <div class="section-bar" id="sectionBar">
-    <h2 id="sectionBarTitle"></h2>
-    <button class="back-home" id="backHome">⌂ Back to overview</button>
-  </div>
+
 
   <div id="homeView">
     <div class="home-section-label">Explore the dashboard</div>
@@ -3104,9 +3102,23 @@
       document.getElementById('raceresultsView').style.display = view === 'raceresults' ? '' : 'none';
       document.getElementById('perfindexView').style.display = view === 'perfindex' ? '' : 'none';
       document.getElementById('homeView').style.display = view === 'home' ? '' : 'none';
-      const SECTION_TITLES = { world: 'World Rankings', belgium: '🇧🇪 Belgium Deep Dive', athlete: '🔎 Athlete Focus', leaderboard: '🏆 Best Opportunities', startlist: '📋 Startlist Watch', opportunity: '🎯 Opportunity Scoring', opportunityv2: '🆕 Upcoming Scoring Opportunities', olympicqual: '🥇 Olympic Qualification — LA28', raceresults: '🏁 Race Splits', perfindex: '📊 Weighted Performance Index' };
-      document.getElementById('sectionBar').style.display = view === 'home' ? 'none' : 'flex';
-      document.getElementById('sectionBarTitle').textContent = SECTION_TITLES[view] || '';
+      const HOME_META = { t: 'Elite Performance Dashboard', d: 'One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, start lists, race analysis, upcoming scoring opportunities and the road to LA28 — built on official World Triathlon data, updated on request.' };
+      const SECTION_META = {
+        world: { t: 'World Rankings', d: 'The full Elite World Triathlon rankings, all athletes.' },
+        belgium: { t: '🇧🇪 Belgium Deep Dive', d: 'Scoring breakdown for every Belgian elite — counting scores per period, criteria checks — plus the junior Europe rankings.' },
+        athlete: { t: '🔎 Athlete Focus', d: 'One athlete at a time: period stats, score rotation watch, discipline trends and personal outlook.' },
+        leaderboard: { t: '🏆 Best Opportunities', d: 'Who has the most points to gain right now, ranked across the whole roster.' },
+        startlist: { t: '📋 Startlist Watch', d: 'Upcoming Elite start lists scanned for Belgian entries.' },
+        opportunity: { t: '🎯 Opportunity Scoring', d: 'Expected points per athlete and race, based on each athlete\u2019s demonstrated level.' },
+        opportunityv2: { t: '🆕 Upcoming Scoring Opportunities', d: 'Strict-tier 12-week outlook with expected gains and field-strength context.' },
+        olympicqual: { t: '🥇 Olympic Qualification — LA28', d: 'Individual and Mixed Relay qualification rankings, Belgium\u2019s position and what it takes.' },
+        raceresults: { t: '🏁 Race Splits', d: 'Swim / bike / run splits for every race with Belgian participation, against the field\u2019s best.' },
+        perfindex: { t: '📊 Weighted Performance Index', d: 'How strong each race\u2019s field really was — the WPI behind the Be3 selection criteria.' }
+      };
+      const meta = view === 'home' ? HOME_META : (SECTION_META[view] || HOME_META);
+      document.getElementById('heroTitle').textContent = meta.t;
+      document.getElementById('heroDesc').textContent = meta.d;
+      document.getElementById('backHome').style.display = view === 'home' ? 'none' : 'inline-block';
     });
   });
 
