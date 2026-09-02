@@ -386,20 +386,20 @@
   .hero-chip { font-size:11.5px; font-weight:600; color:#fff; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18); padding:5px 12px; border-radius:999px; }
   .hero-chip strong { color:var(--brand-blue); }
   .home-section-label { font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:700; color:var(--text-muted); margin:22px 0 10px; }
-  .nav-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); gap:14px; }
-  .nav-card { background:linear-gradient(135deg,#0e2433 0%,#1b4763 100%); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:18px 18px 17px; cursor:pointer; box-shadow:0 2px 8px rgba(14,36,51,.18); transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; position:relative; overflow:hidden; }
+  .nav-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:16px; }
+  .nav-card { background:linear-gradient(135deg,#0e2433 0%,#1b4763 100%); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:24px 22px 21px; cursor:pointer; box-shadow:0 2px 8px rgba(14,36,51,.18); transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; position:relative; overflow:hidden; }
   .nav-card::after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg,#000 0 18%,var(--brand-yellow) 18% 36%,var(--brand-red) 36% 54%,var(--brand-blue) 54% 100%); }
   .nav-card:hover { transform:translateY(-2px); border-color:var(--brand-blue); box-shadow:0 10px 26px rgba(14,36,51,.35); }
   .nav-card .nc-icon { font-size:21px; margin-bottom:9px; }
-  .nav-card h3 { margin:0 0 7px; font-size:17.5px; font-weight:700; color:#fff; letter-spacing:.01em; padding-right:24px; }
-  .nav-card p { margin:0 0 10px; font-size:12px; line-height:1.5; color:rgba(255,255,255,.72); min-height:36px; }
+  .nav-card h3 { margin:0 0 8px; font-size:19px; font-weight:700; color:#fff; letter-spacing:.01em; padding-right:24px; }
+  .nav-card p { margin:0 0 12px; font-size:13px; line-height:1.55; color:rgba(255,255,255,.72); min-height:40px; }
   .nav-card .nc-stat { font-size:12px; font-weight:700; color:var(--brand-blue); }
   .nav-card .nc-go { position:absolute; top:14px; right:14px; color:rgba(255,255,255,.45); font-size:14px; }
   .nav-card:hover .nc-go { color:var(--brand-blue); }
   nav.view-tabs { display:none !important; }
   .hero-controls { position:absolute; top:18px; right:20px; display:flex; gap:8px; z-index:3; }
-  .back-home { background:rgba(255,255,255,.10); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:7px 16px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
-  .back-home:hover { border-color:var(--brand-blue); color:var(--brand-blue); }
+  .back-home { background:var(--brand-yellow); color:#0e2433; border:none; border-radius:999px; padding:9px 20px; font-size:13.5px; font-weight:800; cursor:pointer; white-space:nowrap; margin:0 0 16px; box-shadow:0 2px 10px rgba(0,0,0,.35); letter-spacing:.01em; }
+  .back-home:hover { background:#ffe54d; transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,.4); }
   /* background watermark */
   #bgWatermark { position:fixed; inset:0; z-index:0; pointer-events:none; background-repeat:no-repeat; background-position:center 45%; background-size:min(85vw, 1500px); opacity:.11; }
   .wrap { position:relative; z-index:1; }
@@ -411,13 +411,13 @@
 
   <header class="hero" id="mainHeader">
     <div class="hero-controls">
-      <button class="back-home" id="backHome" style="display:none;">⌂ Back to overview</button>
       <button class="theme-toggle" id="themeToggle">Toggle dark mode</button>
     </div>
+    <button class="back-home" id="backHome" style="display:none;">&larr; Back to overview</button>
     <img class="hero-logo" id="heroLogo" alt="Belgian Triathlon — home" title="Back to home">
     <div class="hero-kicker">Belgian Triathlon &middot; BE3 Topsport</div>
     <h1 id="heroTitle">Elite Performance Dashboard</h1>
-    <p class="hero-desc" id="heroDesc">One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, start lists, race analysis, upcoming scoring opportunities and the road to LA28 &mdash; built on official World Triathlon data, updated on request.</p>
+    <p class="hero-desc" id="heroDesc">One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, race analysis and the road to LA28 &mdash; built on official World Triathlon data, updated on request.</p>
     <p class="subtitle" id="subtitleLine">Loading…</p>
   </header>
 
@@ -3102,7 +3102,7 @@
       document.getElementById('raceresultsView').style.display = view === 'raceresults' ? '' : 'none';
       document.getElementById('perfindexView').style.display = view === 'perfindex' ? '' : 'none';
       document.getElementById('homeView').style.display = view === 'home' ? '' : 'none';
-      const HOME_META = { t: 'Elite Performance Dashboard', d: 'One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, start lists, race analysis, upcoming scoring opportunities and the road to LA28 — built on official World Triathlon data, updated on request.' };
+      const HOME_META = { t: 'Elite Performance Dashboard', d: 'One place to follow every Belgian elite and junior: world rankings and scoring breakdowns, Be3 selection-criteria checks, race analysis and the road to LA28 — built on official World Triathlon data, updated on request.' };
       const SECTION_META = {
         world: { t: 'World Rankings', d: 'The full Elite World Triathlon rankings, all athletes.' },
         belgium: { t: '🇧🇪 Belgium Deep Dive', d: 'Scoring breakdown for every Belgian elite — counting scores per period, criteria checks — plus the junior Europe rankings.' },
@@ -3118,7 +3118,7 @@
       const meta = view === 'home' ? HOME_META : (SECTION_META[view] || HOME_META);
       document.getElementById('heroTitle').textContent = meta.t;
       document.getElementById('heroDesc').textContent = meta.d;
-      document.getElementById('backHome').style.display = view === 'home' ? 'none' : 'inline-block';
+      document.getElementById('backHome').style.display = view === 'home' ? 'none' : 'inline-flex';
     });
   });
 
@@ -3132,14 +3132,9 @@
   document.getElementById('backHome').addEventListener('click', () => showView('home'));
   function renderHome() {
 
-    const bestOpp = (OPPORTUNITY_V2.opportunities || []).filter(o => o.realistic)[0];
     const cards = [
       {v:'belgium', i:'🇧🇪', t:'Belgium Deep Dive', d:'Scoring breakdown for every Belgian elite — counting scores per period, criteria checks — plus the junior Europe rankings.', s:`${BELGIUM.length} elites &middot; ${JUNIORS.juniors.length} juniors`},
       {v:'athlete', i:'🔎', t:'Athlete Focus', d:'One athlete at a time: period stats, score rotation watch and personal outlook.', s:'Per-athlete detail'},
-      {v:'leaderboard', i:'🏆', t:'Best Opportunities', d:'Who has the most points to gain right now, ranked across the whole roster.', s: bestOpp ? `Top: ${bestOpp.athlete_name} +${Math.round(bestOpp.opportunity_gain)} pts` : 'Ranked point gains'},
-      {v:'startlist', i:'📋', t:'Startlist Watch', d:'Upcoming Elite start lists scanned for Belgian entries.', s:`${STARTLIST.total_programs || (STARTLIST.programs || []).length} upcoming programs`},
-      {v:'opportunity', i:'🎯', t:'Opportunity Scoring', d:'Expected points per athlete and race, based on each athlete&rsquo;s demonstrated level.', s:`${(OPPORTUNITY.opportunities || []).length} race &times; athlete estimates`},
-      {v:'opportunityv2', i:'🆕', t:'Upcoming Scoring Opportunities', d:'Strict-tier 12-week outlook with expected gains and field-strength context.', s:`${(OPPORTUNITY_V2.opportunities || []).length} opportunities &middot; 12 weeks ahead`},
       {v:'olympicqual', i:'🥇', t:'Olympic Qualification — LA28', d:'Individual and Mixed Relay qualification rankings, Belgium&rsquo;s position and what it takes.', s:`Belgium MTR #${OLYMPIC_QUAL.mtr.belgium.rank} &middot; ${OLYMPIC_QUAL.individual.women.belgians.filter(b => b.needs.gap === 0).length + OLYMPIC_QUAL.individual.men.belgians.filter(b => b.needs.gap === 0).length} in qualifying position`},
       {v:'raceresults', i:'🏁', t:'Race Splits', d:'Swim / bike / run splits for every race with Belgian participation, against the field&rsquo;s best.', s:`${RACERESULTS.total_events || (RACERESULTS.events || []).length} races analysed`},
       {v:'perfindex', i:'📊', t:'Weighted Performance Index', d:'How strong each race&rsquo;s field really was — the WPI behind the Be3 selection criteria.', s:`${PERFINDEX.rows.length} race fields indexed`}
