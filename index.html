@@ -3153,9 +3153,9 @@
     document.getElementById('navGrid').innerHTML = cards.map(c => `
       <div class="nav-card" data-goto="${c.v}" style="background:linear-gradient(120deg,#0e2433 0%,${c.g} 100%);border-left:6px solid ${c.a};">
         <span class="nc-go" style="color:${c.a};">&rarr;</span>
-        <h3>${c.t}</h3>
+        <h3 style="color:${c.a};">${c.t}</h3>
         <p>${c.d}</p>
-        <div class="nc-stat" style="color:${c.a};">${c.s}</div>
+        <div class="nc-stat" style="color:#fff;">${c.s}</div>
       </div>`).join('');
     document.querySelectorAll('#navGrid .nav-card').forEach(el => el.addEventListener('click', () => showView(el.dataset.goto)));
   }
