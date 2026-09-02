@@ -437,7 +437,6 @@
 
 
   <div id="homeView">
-    <div class="home-section-label">Explore the dashboard</div>
     <div class="nav-grid" id="navGrid"></div>
   </div>
 
@@ -3145,18 +3144,18 @@
   function renderHome() {
 
     const cards = [
-      {v:'belgium', i:'🇧🇪', t:'Belgium Deep Dive', d:'Scoring breakdown for every Belgian elite — counting scores per period, criteria checks — plus the junior Europe rankings.', s:`${BELGIUM.length} elites &middot; ${JUNIORS.juniors.length} juniors`},
-      {v:'athlete', i:'🔎', t:'Athlete Focus', d:'One athlete at a time: period stats, score rotation watch and personal outlook.', s:'Per-athlete detail'},
-      {v:'olympicqual', i:'🥇', t:'Olympic Qualification — LA28', d:'Individual and Mixed Relay qualification rankings, Belgium&rsquo;s position and what it takes.', s:`Belgium MTR #${OLYMPIC_QUAL.mtr.belgium.rank} &middot; ${OLYMPIC_QUAL.individual.women.belgians.filter(b => b.needs.gap === 0).length + OLYMPIC_QUAL.individual.men.belgians.filter(b => b.needs.gap === 0).length} in qualifying position`},
-      {v:'raceresults', i:'🏁', t:'Race Splits', d:'Swim / bike / run splits for every race with Belgian participation, against the field&rsquo;s best.', s:`${RACERESULTS.total_events || (RACERESULTS.events || []).length} races analysed`},
-      {v:'perfindex', i:'📊', t:'Weighted Performance Index', d:'How strong each race&rsquo;s field really was — the WPI behind the Be3 selection criteria.', s:`${PERFINDEX.rows.length} race fields indexed`}
+      {v:'belgium', g:'#173d5a', a:'#ffd900', i:'🇧🇪', t:'Belgium Deep Dive', d:'Scoring breakdown for every Belgian elite — counting scores per period, criteria checks — plus the junior Europe rankings.', s:`${BELGIUM.length} elites &middot; ${JUNIORS.juniors.length} juniors`},
+      {v:'athlete', g:'#0e4a44', a:'#2fd6bd', i:'🔎', t:'Athlete Focus', d:'One athlete at a time: period stats, score rotation watch and personal outlook.', s:'Per-athlete detail'},
+      {v:'olympicqual', g:'#49380f', a:'#ffc93c', i:'🥇', t:'Olympic Qualification — LA28', d:'Individual and Mixed Relay qualification rankings, Belgium&rsquo;s position and what it takes.', s:`Belgium MTR #${OLYMPIC_QUAL.mtr.belgium.rank} &middot; ${OLYMPIC_QUAL.individual.women.belgians.filter(b => b.needs.gap === 0).length + OLYMPIC_QUAL.individual.men.belgians.filter(b => b.needs.gap === 0).length} in qualifying position`},
+      {v:'raceresults', g:'#372054', a:'#a98bff', i:'🏁', t:'Race Splits', d:'Swim / bike / run splits for every race with Belgian participation, against the field&rsquo;s best.', s:`${RACERESULTS.total_events || (RACERESULTS.events || []).length} races analysed`},
+      {v:'perfindex', g:'#0f4459', a:'#45c4ff', i:'📊', t:'Weighted Performance Index', d:'How strong each race&rsquo;s field really was — the WPI behind the Be3 selection criteria.', s:`${PERFINDEX.rows.length} race fields indexed`}
     ];
     document.getElementById('navGrid').innerHTML = cards.map(c => `
-      <div class="nav-card" data-goto="${c.v}">
-        <span class="nc-go">&rarr;</span>
+      <div class="nav-card" data-goto="${c.v}" style="background:linear-gradient(120deg,#0e2433 0%,${c.g} 100%);border-left:6px solid ${c.a};">
+        <span class="nc-go" style="color:${c.a};">&rarr;</span>
         <h3>${c.t}</h3>
         <p>${c.d}</p>
-        <div class="nc-stat">${c.s}</div>
+        <div class="nc-stat" style="color:${c.a};">${c.s}</div>
       </div>`).join('');
     document.querySelectorAll('#navGrid .nav-card').forEach(el => el.addEventListener('click', () => showView(el.dataset.goto)));
   }
