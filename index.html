@@ -3126,10 +3126,29 @@
         raceresults: { t: '🏁 Race Splits', d: 'Swim / bike / run splits for every race with Belgian participation, against the field\u2019s best.' },
         perfindex: { t: '📊 Weighted Performance Index', d: 'How strong each race\u2019s field really was — the WPI behind the Be3 selection criteria.' }
       };
+      const SECTION_STYLE = { belgium: {g:'#173d5a',a:'#ffd900'}, athlete: {g:'#0e4a44',a:'#2fd6bd'}, olympicqual: {g:'#49380f',a:'#ffc93c'}, raceresults: {g:'#372054',a:'#a98bff'}, perfindex: {g:'#0f4459',a:'#45c4ff'}, world: {g:'#1b4763',a:'#5baed1'} };
       const meta = view === 'home' ? HOME_META : (SECTION_META[view] || HOME_META);
-      document.getElementById('heroTitle').textContent = meta.t;
+      const hero = document.getElementById('mainHeader');
+      const heroT = document.getElementById('heroTitle');
+      const back = document.getElementById('backHome');
+      heroT.textContent = meta.t;
       document.getElementById('heroDesc').textContent = meta.d;
-      document.getElementById('backHome').style.display = view === 'home' ? 'none' : 'inline-flex';
+      if (view === 'home') {
+        hero.style.background = '';
+        hero.style.padding = '';
+        heroT.style.color = '';
+        document.getElementById('heroLogo').style.height = '';
+        back.style.display = 'none';
+      } else {
+        const st = SECTION_STYLE[view] || SECTION_STYLE.world;
+        hero.style.background = `linear-gradient(120deg,#0e2433 0%,${st.g} 100%)`;
+        hero.style.padding = '24px 420px 20px 36px';
+        heroT.style.color = st.a;
+        document.getElementById('heroLogo').style.height = '84px';
+        back.style.display = 'inline-flex';
+        back.style.background = st.a;
+        back.style.color = '#0e2433';
+      }
     });
   });
 
